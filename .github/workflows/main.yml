@@ -1,7 +1,7 @@
 name: Update Stock News
 on:
   schedule:
-    - cron: '0 * * * *'  # สั่งให้รันทุกๆ ต้นชั่วโมงอัตโนมัติ
+    - cron: '*/30 * * * *'  # สั่งให้รันทุกๆ ต้นชั่วโมงอัตโนมัติ
   workflow_dispatch:      # ปุ่มสำหรับกดรันเองเพื่อทดสอบ
 jobs:
   build:
