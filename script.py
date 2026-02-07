@@ -1,32 +1,50 @@
 import os
-import json
-import gspread
 import requests
 import re
 from bs4 import BeautifulSoup
-from google.oauth2.service_account import Credentials
 
-# 1. ดึงข้อมูลจาก Finviz
-url = "https://finviz.com/news.ashx?v=3"
-headers = {"User-Agent": "Mozilla/5.0"}
-response = requests.get(url, headers=headers)
-soup = BeautifulSoup(response.text, "html.parser")
-pattern = r"\b([A-Z]{1,5})\s*([+-]?\d{1,3}\.\d{1,2}%)"
-matches = re.findall(pattern, soup.get_text())
-final_output = [["Ticker", "Change"]]
-for m in matches:
-    final_output.append([m[0], m[1]])
+# --- CONFIGURATION ---
+# นำ Web App URL ที่ได้จากการ Deploy ใน Google Apps Script มาวางที่นี่
+WEBAPP_URL = "YOUR_GOOGLE_SCRIPT_WEBAPP_URL_HERE" 
 
-# 2. เชื่อมต่อ Google Sheets ผ่าน Secrets
-scopes = ["https://www.googleapis.com/auth/spreadsheets", "https://www.googleapis.com/auth/drive"]
-creds_json = json.loads(os.environ['GOOGLE_CREDENTIALS'])
-creds = Credentials.from_service_account_info(creds_json, scopes=scopes)
-gc = gspread.authorize(creds)
+def update_news():
+    print("[1/2] Fetching news from Finviz...")
+    url = "https://finviz.com/news.ashx?v=3"
+    headers = {"User-Agent": "Mozilla/5.0"}
+    
+    try:
+        response = requests.get(url, headers=headers, timeout=15)
+        response.raise_for_status()
+        soup = BeautifulSoup(response.text, "html.parser")
+        
+        # ค้นหา Ticker และ %Change (เช่น NVDA +7.87%)
+        pattern = r"\b([A-Z]{1,5})\s*([+-]?\d{1,3}\.\d{1,2}%)"
+        matches = re.findall(pattern, soup.get_text())
+        
+        # กรองข้อมูลให้อยู่ในรูปแบบ List of Lists: [[Ticker, Change], ...]
+        # โดยไม่ใส่หัวข้อ "Ticker", "Change" เข้าไปในข้อมูลดิบ
+        new_data = [[m[0], m[1]] for m in matches]
+        
+        if not new_data:
+            print("[SKIP] No stock news found on Finviz. Process ended.")
+            return
 
-# 3. บันทึก (ใช้ไฟล์ชื่อ Finviz_News_Update ตามที่ตกลงกันไว้)
-sh = gc.open("Finviz_News_Update")
-worksheet = sh.get_worksheet(0)
-worksheet.clear()
-worksheet.update(values=final_output, range_name='A1')
+        print(f"[OK] Found {len(new_data)} news items.")
 
-print(f"Update Successful: {len(final_output)-1} items found.")
+        # [2/2] ส่งข้อมูลไปยัง Google Apps Script
+        print("[2/2] Sending data to Google Apps Script...")
+        
+        # ส่งแบบ POST พร้อมข้อมูล JSON
+        post_response = requests.post(WEBAPP_URL, json=new_data, timeout=20)
+        
+        if post_response.status_code == 200:
+            print(f"[SUCCESS] Server Response: {post_response.text}")
+        else:
+            print(f"[ERROR] Server returned code: {post_response.status_code}")
+            print(f"Response content: {post_response.text}")
+
+    except Exception as e:
+        print(f"[CRITICAL ERROR] {str(e)}")
+
+if __name__ == "__main__":
+    update_news()
