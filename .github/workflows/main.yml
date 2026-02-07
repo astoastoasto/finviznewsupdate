@@ -1,18 +1,21 @@
 name: Update Stock News
 on:
   schedule:
-    - cron: '*/30 * * * *'  # สั่งให้รันทุกๆ ต้นชั่วโมงอัตโนมัติ
-  workflow_dispatch:      # ปุ่มสำหรับกดรันเองเพื่อทดสอบ
+    - cron: '*/30 * * * *'  # รันทุก 30 นาที
+  workflow_dispatch:      # ปุ่มกดรันเอง
+
 jobs:
   build:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v3
+
       - uses: actions/setup-python@v4
         with:
           python-version: '3.9'
-      - run: pip install gspread google-auth requests beautifulsoup4
+
+      # ติดตั้งเฉพาะ library ที่จำเป็น (requests และ bs4)
+      - run: pip install requests beautifulsoup4
+
       - name: Run script
-        env:
-          GOOGLE_CREDENTIALS: ${{ secrets.GOOGLE_CREDENTIALS }}
         run: python script.py
