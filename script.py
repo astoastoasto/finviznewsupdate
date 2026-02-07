@@ -5,7 +5,7 @@ from bs4 import BeautifulSoup
 
 # --- CONFIGURATION ---
 # นำ Web App URL ที่ได้จากการ Deploy ใน Google Apps Script มาวางที่นี่
-WEBAPP_URL = "https://script.google.com/macros/s/AKfycbyJQCQQ5owXbuejdEVdC--DvWZUPMKLEgGKvWxZjKhYmLuPlqpsDUNsTPeYIgHFQIJ-/exec"
+WEBAPP_URL = "https://script.google.com/macros/s/AKfycbzr-xHBKsUOpfJmp1zM1IPRxx_16dGiPIFAv1Nf4uVIKEWe1sYEPDxDk_oCVVWeFJa9/exec"
 
 def update_news():
     print("[1/2] Fetching news from Finviz...")
